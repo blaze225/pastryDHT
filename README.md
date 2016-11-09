@@ -1,2 +1,2 @@
 # PastryDHT
-Implemented Pastry Algorithms using Distributed Hash Table
+Implemented Pastry Algorithm using Distributed Hash Table
