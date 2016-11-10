@@ -189,7 +189,7 @@ void Update_row(string temp_a, int temp_col, int row_no)
 		token1=strtok_r(NULL, delim1, &end1);
 	}
 
-	if(strdiff((RoutingTable[row_no][temp_col]).hash, comm1[2]) > 0 && (RoutingTable[row_no][temp_col]).port!=my_port)
+	if(strdiff((RoutingTable[row_no][temp_col]).hash, comm1[2]) > 0 && comm1[1]!=my_port)
 	{
 		(RoutingTable[row_no][temp_col]).hash=comm1[2];
 		(RoutingTable[row_no][temp_col]).ip=comm1[0];
