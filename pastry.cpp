@@ -21,11 +21,15 @@ int main()
 		}
 		else if (choice == "join")
 		{
-			it++;
-			connect_ip=*it;
-			it++;
-			connect_port=*it;
-			joining(connect_ip,connect_port);
+			if(command.size()==3)
+			{	it++;
+				connect_ip=*it;		// taking 2 arguments
+				it++;
+				connect_port=*it;
+				joining(connect_ip,connect_port);
+			}
+			else
+				cout<<"Wrong number of arguments!!\n";
 		}
 		else if (choice == "put")
 		{

@@ -13,6 +13,27 @@ struct cell RoutingTable[ROW][COL], leaf_set[L];
 list <string> command;
 int sockfd;
 
+// Tokenizing given input and inserting into command
+void Input()
+{
+	cout<<"pastry$ ";
+	fgets(buffer,1000,stdin);
+	string in(buffer);
+	while(isspace(*in.begin()))
+		in.erase(in.begin());
+	strcpy(buffer,in.c_str());
+	command.clear();
+	char delim[5];
+	strcpy(delim," \n");
+	char *token = strtok(buffer,delim);
+	while (token != NULL)
+	{
+		command.push_back(strdup(token));
+		token = strtok(NULL, delim);
+	}
+}
+
+// Update leaf set
 void appendLS(list<string> command)
 {	list <string>::iterator it;
 	it=command.begin();
@@ -35,9 +56,10 @@ void appendLS(list<string> command)
 		it++;
 	}
 	
-	if(strdiff(my_hash, connect_hash) > 0)
-	{
-		if(strdiff((leaf_set[0]).hash, (leaf_set[1]).hash) > 0)
+	if(strdiff(my_hash, connect_hash) > 0)				// comparing new node and existing node to check which children to update
+	{	
+		// First 2 children
+		if(strdiff((leaf_set[0]).hash, (leaf_set[1]).hash) > 0)		// Checking which of the 2 is greater and replacing that
 		{
 			if(strdiff((leaf_set[0]).hash, connect_hash) > 0)
 			{
@@ -56,9 +78,9 @@ void appendLS(list<string> command)
 			}	
 		}
 	}
-	else
-	{
-		if(strdiff((leaf_set[2]).hash, (leaf_set[3]).hash) > 0)
+	else														
+	{	
+		if(strdiff((leaf_set[2]).hash, (leaf_set[3]).hash) > 0)		// Checking which of the 2 is greater and replacing that
 		{
 			if(strdiff((leaf_set[2]).hash, connect_hash) > 0)
 			{
@@ -79,7 +101,7 @@ void appendLS(list<string> command)
 	}
 }
 
-void appendRT(list<string> command)
+void appendRT(list<string> command)			// Update routing table
 {	list <string>::iterator it;
 	it=command.begin();
 	string connect_hash;
@@ -100,12 +122,12 @@ void appendRT(list<string> command)
 		connect_hash=*it;
 		it++;
 	}
-
+														// get common prefix to index by row into table
 	string common=commonprefix(my_hash,connect_hash);
 	int size=int(common.size());
 	int col_no;
 
-	col_no = convertHextoDec(connect_hash[size]);
+	col_no = convertHextoDec(connect_hash[size]);		// col will be first non matching digit
 
 	if(strdiff((RoutingTable[size][col_no]).hash, connect_hash) > 0)
 	{
@@ -139,7 +161,7 @@ void exec_cmd(char *address)
 		appendLS(command);
 	}
 }
-
+/* Converts given port as string into int */
 void porting(string port)
 {
 	my_port=port;
@@ -179,7 +201,7 @@ void *listening(void *ptr)
 	close(newsockfd);
 }
 
-// Server side
+// Socket creation , RT & LS initialization , thread creation
 void creating()
 {
     struct sockaddr_in serv_addr;
@@ -206,6 +228,8 @@ void creating()
     void * tmpAddrPtr=NULL;
     getifaddrs(&ifAddrStruct);
     int i=0;
+
+    // Getting IP  
     for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) 
     {
         if (ifa->ifa_addr->sa_family == AF_INET)
@@ -222,14 +246,14 @@ void creating()
 	
 	my_connect="join:"+ip_addr+":"+my_port;
 	string temp=ip_addr+":"+my_port;
-   	string hash(md5(temp).substr(0,8));
+   	string hash(md5(temp).substr(0,8));		// get hash value for given ip and port
    	my_connect=my_connect+":"+hash;
    	my_hash=hash;
    	
-   	InitializeRT(ip_addr,my_port,my_hash);
+   	InitializeRT(ip_addr,my_port,my_hash);			// initialize routing table and leaf set
 	InitializeLS();
 
-	listen(sockfd,SOMAXCONN);
+	listen(sockfd,SOMAXCONN);						// Listening and creating a new thread for every connection
     pthread_create(&thread1, NULL, listening, &sockfd);
 }
 
@@ -252,11 +276,11 @@ void joining(string connect_ip, string connect_port)
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
     serv_addr.sin_port = htons(atoi(connect_port.c_str()));
-    connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr));
+    connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr));		
    	write(sockfd1,my_connect.c_str(),strlen(my_connect.c_str()));
     
     string temp=connect_ip+":"+connect_port;
-   	string hash(md5(temp).substr(0,8));
+   	string hash(md5(temp).substr(0,8));			// get hash value for given ip and port
    	list<string> temp_connect;
    	string jo="join";
    	temp_connect.push_back(jo);
@@ -267,24 +291,7 @@ void joining(string connect_ip, string connect_port)
    	// Add new node info 
    	appendLS(temp_connect);
    	appendRT(temp_connect);
+
     close(sockfd1);
 }
 
-void Input()
-{
-	cout<<"pastry$ ";
-	fgets(buffer,1000,stdin);
-	string in(buffer);
-	while(isspace(*in.begin()))
-		in.erase(in.begin());
-	strcpy(buffer,in.c_str());
-	command.clear();
-	char delim[5];
-	strcpy(delim," \n");
-	char *token = strtok(buffer,delim);
-	while (token != NULL)
-	{
-		command.push_back(strdup(token));
-		token = strtok(NULL, delim);
-	}
-}

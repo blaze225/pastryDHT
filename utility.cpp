@@ -67,6 +67,8 @@ string commonprefix(string str1, string str2)
     }
     return result;
 }
+
+// Get diff of hex values after converting them into ints
 long long strdiff(string s1, string s2)
 {
 	long long x, y;
