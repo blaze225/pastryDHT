@@ -213,6 +213,8 @@ void exec_cmd(char *address, int sockfd)
 		*it++;
 		string key=*it;
 		string value=key_value[key];
+		if (value == "")
+			value="Value doesnot exit";
 		write(sockfd,value.c_str(),strlen(value.c_str()));
 		return;
 	}
@@ -358,7 +360,12 @@ void joining(string connect_ip, string connect_port)
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
     serv_addr.sin_port = htons(atoi(connect_port.c_str()));
-    connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr));		
+    if (connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+    {
+    	fprintf(stderr,"ERROR, no such host\n");
+        return;	
+    }		
+   	
    	write(sockfd1,my_connect.c_str(),strlen(my_connect.c_str()));
   	vector <string> LS_set;
   	LS_set.push_back(connect_ip);

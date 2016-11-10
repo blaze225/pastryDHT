@@ -6,6 +6,7 @@ int main()
 	int _exit=0;
 	string connect_ip, connect_port;
 	string key, value;
+	int seq=0;
 	while(_exit==0)
 	{
 		Input();
@@ -13,39 +14,67 @@ int main()
 		string choice = *it;
 		if (choice == "port")
 		{
-			it++;
-			porting(*it);
+			if((int)command.size()!=2)
+				cout<<"Enter the correct format: port <port no>"<<endl;
+			else
+			{
+				it++;
+				porting(*it);
+				seq=1;
+			}
 		}
 		else if (choice == "create")
 		{
-			creating();
+			if(seq!=1)
+				cout<<"No port to create"<<endl;
+			else
+			{
+				creating();
+				seq=2;
+			}
 		}
 		else if (choice == "join")
 		{
-			if(command.size()==3)
-			{	
-				it++;
-				connect_ip=*it;		// taking 2 arguments
-				it++;
-				connect_port=*it;
-				joining(connect_ip,connect_port);
-			}
+			if(seq<2)
+				cout<<"Create the node first"<<endl;
 			else
-				cout<<"Wrong number of arguments!!\n";
+			{
+				if(command.size()==3)
+				{	
+					it++;
+					connect_ip=*it;		// taking 2 arguments
+					it++;
+					connect_port=*it;
+					joining(connect_ip,connect_port);
+				}
+				else
+					cout<<"Wrong number of arguments!!\n";
+				seq++;
+			}	
 		}
 		else if (choice == "put")
 		{
-			it++;
-			key=*it;		// taking 2 arguments
-			it++;
-			value=*it;
-			put_key(key,value);
+			if(seq<2)
+				cout<<"First create the node"<<endl;
+			else
+			{
+				it++;
+				key=*it;		// taking 2 arguments
+				it++;
+				value=*it;
+				put_key(key,value);
+			}
 		}
 		else if (choice == "get")
 		{
-			it++;
-			key=*it;		// taking 1 argument
-			cout<<get_key(key)<<"\n";
+			if(seq<2)
+				cout<<"First create the node"<<endl;
+			else
+			{
+				it++;
+				key=*it;		// taking 1 argument
+				cout<<get_key(key)<<"\n";
+			}
 		}
 		else if (choice == "lset")
 		{
