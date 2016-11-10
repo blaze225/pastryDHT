@@ -63,3 +63,4 @@ extern struct cell RoutingTable[ROW][COL], leaf_set[L];
 
 extern list <string> command;
 extern int sockfd;
+extern map <string,string> key_value;

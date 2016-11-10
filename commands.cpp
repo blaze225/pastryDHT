@@ -1,7 +1,6 @@
 #include "header.h"
 pthread_t thread1, thread2;
 char buffer[1000];
-
 int portno;
 pid_t pid;
 string my_connect, my_port;
@@ -208,6 +207,15 @@ void exec_cmd(char *address, int sockfd)
 		i++;
 	}
 
+	it=command.begin();
+	if(*it == "get")
+	{
+		*it++;
+		string key=*it;
+		string value=key_value[key];
+		write(sockfd,value.c_str(),strlen(value.c_str()));
+		return;
+	}
 	string temp_var="";
 	string temp_common = commonprefix(my_hash,temp_hash);
 	int size=int(temp_common.size());
@@ -220,13 +228,19 @@ void exec_cmd(char *address, int sockfd)
 
 	write(sockfd,temp_var.c_str(),strlen(temp_var.c_str()));
 
-	it=command.begin();
 	if(*it == "join")
 	{
 		appendRT(in,0);
 		appendLS(LS_set);
 	}
-	
+	else if(*it == "put")
+	{
+		*it++;
+		string key=*it;
+		*it++;
+		string val=*it;
+		key_value[key]=val;
+	}
 }
 
 /* Converts given port as string into int */
@@ -242,7 +256,7 @@ void *reading(void *ptr)
     char buff[1000];
    	int n=read(*newsockfd,buff,999);
     buff[n]='\0';
-    cout<<buff<<"\n";
+    //cout<<buff<<"\n";
 	exec_cmd(buff,*newsockfd);
 	close(*newsockfd);
 	return 0;
