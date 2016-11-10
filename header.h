@@ -40,7 +40,8 @@ void *listening(void *ptr);
 void *reading(void *ptr);
 void porting(string port);
 void exec_cmd(char *address);
-void appendRT(list<string> command);
+//void appendRT(list<string> command, int mode);
+void appendRT(string, int mode);
 void appendLS(list<string> command);
 string commonprefix(string str1, string str2);
 void printRT();
@@ -49,7 +50,8 @@ int convertHextoDec(char c);
 void InitializeLS();
 long long strdiff(string s1, string s2);
 void printLS();
-
+void update_RT(string temp_row, int row_no);
+void Update_row(string temp_a, int temp_c, int row_no);
 struct cell
 {
 	string ip;
