@@ -1,5 +1,4 @@
 #include "header.h"
-
 pthread_t thread1, thread2;
 char buffer[1000];
 
@@ -34,27 +33,14 @@ void Input()
 }
 
 // Update leaf set
-void appendLS(list<string> command)
-{	list <string>::iterator it;
-	it=command.begin();
+void appendLS(vector<string> comm1)
+{	
 	string connect_hash;
-	int i=0;
 	string connectip;
 	string connectport;
-	while(it != command.end())
-	{
-		if(i==1)
-		{
-			connectip=*it;
-		}
-		else if (i==2)
-		{
-			connectport=*it;
-		}
-		i++;
-		connect_hash=*it;
-		it++;
-	}
+	connectip=comm1[0];
+	connectport=comm1[1];
+	connect_hash=comm1[2];
 	
 	if(strdiff(my_hash, connect_hash) > 0)				// comparing new node and existing node to check which children to update
 	{	
@@ -140,18 +126,18 @@ void appendRT(string address, int mode)			// Update routing table
 		char buff1[2000];
 		strcpy(buff1,address.c_str());
 		char delim[5];
+		char *end2;
 		strcpy(delim,"#\n");
-		char *token = strtok(buff1,delim);
+		char *token = strtok_r(buff1,delim,&end2);
 		string temp_add;
 		int row_no=0;
 		while (token != NULL)
 		{
 			temp_add = strdup(token);
 			update_RT(temp_add,row_no);
-			token = strtok(NULL, delim);
+			token = strtok_r(NULL, delim, &end2);
 			row_no++;
 		}
-			
 	}
 }
 
@@ -200,6 +186,7 @@ void Update_row(string temp_a, int temp_col, int row_no)
 void exec_cmd(char *address, int sockfd)
 {	
 	list <string>::iterator it;
+	vector <string> LS_set;
 	string in(address);
 	while(isspace(*in.begin()))
 		in.erase(in.begin());
@@ -210,11 +197,15 @@ void exec_cmd(char *address, int sockfd)
 	strcpy(delim,":\n");
 	char *token = strtok(buff1,delim);
 	string temp_hash;
+	int i=0;
 	while (token != NULL)
 	{
+		if(i>=1)
+			LS_set.push_back(token);
 		command.push_back(strdup(token));
 		temp_hash=token;
 		token = strtok(NULL, delim);
+		i++;
 	}
 
 	string temp_var="";
@@ -233,11 +224,11 @@ void exec_cmd(char *address, int sockfd)
 	if(*it == "join")
 	{
 		appendRT(in,0);
-		//appendLS(command);
+		appendLS(LS_set);
 	}
 	
-	//string temp_var="HEYYYYY!!";
 }
+
 /* Converts given port as string into int */
 void porting(string port)
 {
@@ -323,14 +314,14 @@ void creating()
 	
 	my_connect="join:"+ip_addr+":"+my_port;
 	string temp=ip_addr+":"+my_port;
-   	string hash(md5(temp).substr(0,8));		// get hash value for given ip and port
+   	string hash(md5(temp).substr(0,8));	// get hash value for given ip and port
    	my_connect=my_connect+":"+hash;
    	my_hash=hash;
    	
-   	InitializeRT(ip_addr,my_port,my_hash);			// initialize routing table and leaf set
+   	InitializeRT(ip_addr,my_port,my_hash);	// initialize routing table and leaf set
 	InitializeLS();
 
-	listen(sockfd,SOMAXCONN);						// Listening and creating a new thread for every connection
+	listen(sockfd,SOMAXCONN);	// Listening and creating a new thread for every connection
     pthread_create(&thread1, NULL, listening, &sockfd);
 }
 
@@ -355,25 +346,19 @@ void joining(string connect_ip, string connect_port)
     serv_addr.sin_port = htons(atoi(connect_port.c_str()));
     connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr));		
    	write(sockfd1,my_connect.c_str(),strlen(my_connect.c_str()));
+  	vector <string> LS_set;
+  	LS_set.push_back(connect_ip);
+  	LS_set.push_back(connect_port);
+
+  	string temp=connect_ip+":"+connect_port;
+   	string hash(md5(temp).substr(0,8));	// get hash value for given ip and port
+   	LS_set.push_back(hash);
+  	appendLS(LS_set);
 
    	char buff1[2000];
    	int n=read(sockfd1,buff1,2000);
    	buff1[n]='\0';
-   	string new_row(buff1);
-//   	cout<<"R: "<<new_row<<"\n";
-
-    /*string temp=connect_ip+":"+connect_port;
-   	string hash(md5(temp).substr(0,8));			// get hash value for given ip and port
-   	list<string> temp_connect;
-   	string jo="join";
-   	temp_connect.push_back(jo);
-   	temp_connect.push_back(connect_ip);
-   	temp_connect.push_back(connect_port);
-   	temp_connect.push_back(hash);*/
-
-   	// Add new node info 
-   	//appendLS(temp_connect);
-   	appendRT(new_row,1);
-
+   	string new_row(buff1); // returning matching number of rows
+  	appendRT(new_row,1);
     close(sockfd1);
 }

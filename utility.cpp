@@ -99,3 +99,13 @@ int convertHextoDec(char c)
 
 return col_no;
 }
+
+void put_key(string key, string value)
+{
+
+}
+
+string get_key(string key)
+{
+	
+}

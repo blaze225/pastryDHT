@@ -5,6 +5,7 @@ int main()
 {
 	int _exit=0;
 	string connect_ip, connect_port;
+	string key, value;
 	while(_exit==0)
 	{
 		Input();
@@ -22,7 +23,8 @@ int main()
 		else if (choice == "join")
 		{
 			if(command.size()==3)
-			{	it++;
+			{	
+				it++;
 				connect_ip=*it;		// taking 2 arguments
 				it++;
 				connect_port=*it;
@@ -33,11 +35,17 @@ int main()
 		}
 		else if (choice == "put")
 		{
-
+			it++;
+			key=*it;		// taking 2 arguments
+			it++;
+			value=*it;
+			put_key(key,value);
 		}
 		else if (choice == "get")
 		{
-
+			it++;
+			key=*it;		// taking 1 argument
+			cout<<get_key(key)<<"\n";
 		}
 		else if (choice == "lset")
 		{

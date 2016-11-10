@@ -40,9 +40,8 @@ void *listening(void *ptr);
 void *reading(void *ptr);
 void porting(string port);
 void exec_cmd(char *address);
-//void appendRT(list<string> command, int mode);
 void appendRT(string, int mode);
-void appendLS(list<string> command);
+void appendLS(vector<string> command);
 string commonprefix(string str1, string str2);
 void printRT();
 void InitializeRT(string ip_addr, string my_port, string my_hash);
@@ -52,6 +51,8 @@ long long strdiff(string s1, string s2);
 void printLS();
 void update_RT(string temp_row, int row_no);
 void Update_row(string temp_a, int temp_c, int row_no);
+void put_key(string key, string value);
+string get_key(string key);
 struct cell
 {
 	string ip;
