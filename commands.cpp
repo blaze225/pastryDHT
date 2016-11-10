@@ -101,44 +101,105 @@ void appendLS(list<string> command)
 	}
 }
 
-void appendRT(list<string> command)			// Update routing table
-{	list <string>::iterator it;
-	it=command.begin();
-	string connect_hash;
-	int i=0;
-	string connectip;
-	string connectport;
-	while(it != command.end())
+//void appendRT(list<string> command, int mode)			// Update routing table
+void appendRT(string address, int mode)			// Update routing table
+{	
+	if(mode == 0)
 	{
-		if(i==1)
+		vector<string> comm;
+		int i=0;
+		char buff1[1000];
+		strcpy(buff1,address.c_str());
+		comm.clear();
+		char delim[5];
+		strcpy(delim,":\n");
+		char *token = strtok(buff1,delim);
+		string temp_hash;
+		while (token != NULL)
 		{
-			connectip=*it;
+			comm.push_back(strdup(token));
+			token = strtok(NULL, delim);
 		}
-		else if (i==2)
+
+		// get common prefix to index by row into table
+		string common=commonprefix(my_hash,comm[3]);
+		int size=int(common.size());
+		int col_no;
+
+		col_no = convertHextoDec((comm[3])[size]); // col will be first non matching digit
+
+		if(strdiff((RoutingTable[size][col_no]).hash, comm[3]) > 0)
 		{
-			connectport=*it;
+			(RoutingTable[size][col_no]).hash=comm[3];
+			(RoutingTable[size][col_no]).ip=comm[1];
+			(RoutingTable[size][col_no]).port=comm[2];
 		}
-		i++;
-		connect_hash=*it;
-		it++;
 	}
-														// get common prefix to index by row into table
-	string common=commonprefix(my_hash,connect_hash);
-	int size=int(common.size());
-	int col_no;
-
-	col_no = convertHextoDec(connect_hash[size]);		// col will be first non matching digit
-
-	if(strdiff((RoutingTable[size][col_no]).hash, connect_hash) > 0)
+	else
 	{
-		(RoutingTable[size][col_no]).hash=connect_hash;
-		(RoutingTable[size][col_no]).ip=connectip;
-		(RoutingTable[size][col_no]).port=connectport;
+		char buff1[2000];
+		strcpy(buff1,address.c_str());
+		char delim[5];
+		strcpy(delim,"#\n");
+		char *token = strtok(buff1,delim);
+		string temp_add;
+		int row_no=0;
+		while (token != NULL)
+		{
+			temp_add = strdup(token);
+			update_RT(temp_add,row_no);
+			token = strtok(NULL, delim);
+			row_no++;
+		}
+			
 	}
 }
 
-void exec_cmd(char *address)
-{	list <string>::iterator it;
+void update_RT(string temp_row, int row_no)
+{
+		char buff1[2000];
+		strcpy(buff1,temp_row.c_str());
+		char delim[5];
+		strcpy(delim,"@\n");
+		char *end;
+		char *token = strtok_r(buff1,delim,&end);
+		string temp_add, tick;
+		int temp_col = 0;
+		while (token != NULL)
+		{
+			temp_add = token;
+			Update_row(temp_add, temp_col, row_no);
+			temp_col++;
+			token = strtok_r(NULL, delim,&end);
+		}
+
+}
+void Update_row(string temp_a, int temp_col, int row_no)
+{
+	char bufferr[1000];
+	strcpy(bufferr,temp_a.c_str());
+	char delim1[5];
+	char *end1;
+	strcpy(delim1,":\n");
+	char *token1 = strtok_r(bufferr,delim1,&end1);
+	vector<string> comm1;
+	while(token1!=NULL)
+	{
+		comm1.push_back(token1);
+		token1=strtok_r(NULL, delim1, &end1);
+	}
+
+	if(strdiff((RoutingTable[row_no][temp_col]).hash, comm1[2]) > 0 && (RoutingTable[row_no][temp_col]).port!=my_port)
+	{
+		(RoutingTable[row_no][temp_col]).hash=comm1[2];
+		(RoutingTable[row_no][temp_col]).ip=comm1[0];
+		(RoutingTable[row_no][temp_col]).port=comm1[1];
+	}
+}
+
+void exec_cmd(char *address, int sockfd)
+{	
+	list <string>::iterator it;
 	string in(address);
 	while(isspace(*in.begin()))
 		in.erase(in.begin());
@@ -148,18 +209,34 @@ void exec_cmd(char *address)
 	char delim[5];
 	strcpy(delim,":\n");
 	char *token = strtok(buff1,delim);
+	string temp_hash;
 	while (token != NULL)
 	{
 		command.push_back(strdup(token));
+		temp_hash=token;
 		token = strtok(NULL, delim);
 	}
+
+	string temp_var="";
+	string temp_common = commonprefix(my_hash,temp_hash);
+	int size=int(temp_common.size());
+	for(int j=0;j<=size;j++)
+	{
+		for(int i=0;i<16;i++)
+			temp_var=temp_var+(RoutingTable[j][i]).ip+":"+(RoutingTable[j][i]).port+":"+(RoutingTable[j][i]).hash+"@";
+		temp_var=temp_var+"#";
+	}
+
+	write(sockfd,temp_var.c_str(),strlen(temp_var.c_str()));
 
 	it=command.begin();
 	if(*it == "join")
 	{
-		appendRT(command);
-		appendLS(command);
+		appendRT(in,0);
+		//appendLS(command);
 	}
+	
+	//string temp_var="HEYYYYY!!";
 }
 /* Converts given port as string into int */
 void porting(string port)
@@ -175,7 +252,7 @@ void *reading(void *ptr)
    	int n=read(*newsockfd,buff,999);
     buff[n]='\0';
     cout<<buff<<"\n";
-	exec_cmd(buff);
+	exec_cmd(buff,*newsockfd);
 	close(*newsockfd);
 	return 0;
 }
@@ -278,20 +355,25 @@ void joining(string connect_ip, string connect_port)
     serv_addr.sin_port = htons(atoi(connect_port.c_str()));
     connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr));		
    	write(sockfd1,my_connect.c_str(),strlen(my_connect.c_str()));
-    
-    string temp=connect_ip+":"+connect_port;
+
+   	char buff1[2000];
+   	int n=read(sockfd1,buff1,2000);
+   	buff1[n]='\0';
+   	string new_row(buff1);
+//   	cout<<"R: "<<new_row<<"\n";
+
+    /*string temp=connect_ip+":"+connect_port;
    	string hash(md5(temp).substr(0,8));			// get hash value for given ip and port
    	list<string> temp_connect;
    	string jo="join";
    	temp_connect.push_back(jo);
    	temp_connect.push_back(connect_ip);
    	temp_connect.push_back(connect_port);
-   	temp_connect.push_back(hash);
+   	temp_connect.push_back(hash);*/
 
    	// Add new node info 
-   	appendLS(temp_connect);
-   	appendRT(temp_connect);
+   	//appendLS(temp_connect);
+   	appendRT(new_row,1);
 
     close(sockfd1);
 }
-
